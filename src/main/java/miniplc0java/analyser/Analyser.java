@@ -202,7 +202,10 @@ public final class Analyser {
 
     private void analyseMain() throws CompileError {
         // 主过程 -> 常量声明 变量声明 语句序列
-        throw new Error("Not implemented");
+        analyseConstantDeclaration();
+        analyseVariableDeclaration();
+        analyseStatementSequence();
+
     }
 
     private void analyseConstantDeclaration() throws CompileError {
@@ -242,12 +245,14 @@ public final class Analyser {
         // 如果下一个 token 是 var 就继续
         while (nextIf(TokenType.Var) != null) {
             // 变量声明语句 -> 'var' 变量名 ('=' 表达式)? ';'
-
+            var nameToken = expect(TokenType.Ident);
             // 变量名
-
-            // 变量初始化了吗
             boolean initialized = false;
-
+            // 变量初始化了吗
+            if(check(TokenType.Equal)) {
+                analyseExpression();
+                initialized = true;
+            }
             // 下个 token 是等于号吗？如果是的话分析初始化
 
             // 分析初始化的表达式
@@ -256,8 +261,8 @@ public final class Analyser {
             expect(TokenType.Semicolon);
 
             // 加入符号表，请填写名字和当前位置（报错用）
-            String name = /* 名字 */ null;
-            addSymbol(name, false, false, /* 当前位置 */ null);
+            String name =(String)nameToken.getValue();
+            addSymbol(name, false, false, nameToken.getStartPos());
 
             // 如果没有初始化的话在栈里推入一个初始值
             if (!initialized) {
@@ -273,15 +278,22 @@ public final class Analyser {
         while (true) {
             // 如果下一个 token 是……
             var peeked = peek();
-            if (peeked.getTokenType() == TokenType.Ident) {
                 // 调用相应的分析函数
+            if(peeked.getTokenType() == TokenType.Ident) {
+                    analyseAssignmentStatement();
+                }
+            else if(peeked.getTokenType() == TokenType.Print){
+                    analyseOutputStatement();
+                }
+            else if(peeked.getTokenType() == TokenType.Semicolon){
+                    expect(TokenType.Semicolon);
+                }
                 // 如果遇到其他非终结符的 FIRST 集呢？
-            } else {
-                // 都不是，摸了
+            else {
                 break;
             }
         }
-        throw new Error("Not implemented");
+
     }
 
     private int analyseConstantExpression() throws CompileError {
